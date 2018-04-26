@@ -1,8 +1,8 @@
-Simple Multi-Camera Rig for displaying content in the UTS Data Arena
+# Simple Multi-Camera Rig for displaying content in the UTS Data Arena
 
 This is a Unity3D project containing a multi-camera rig for displaying 360 degree content in the UTS Data Arena. It is also capable of rendering top/bottom stereo-3D content.
 
-Check out the example scenes.
+Check out the example scenes for usage.
 
 Quick properties description:
 
