@@ -99,6 +99,10 @@ public class CameraMultiplier : MonoBehaviour {
             
             
             cameras[i].farClipPlane = farClip;
+            Matrix4x4 m = cameras[i].projectionMatrix;
+            m[0, 2] = hOblique;
+            m[1, 2] = vOblique;
+            cameras[i].projectionMatrix = m;
         }
         
         GetComponent<Camera>().enabled = enableBaseCamera;
@@ -111,24 +115,26 @@ public class CameraMultiplier : MonoBehaviour {
         // changing the obliqueness moves the camera's 'center', allowing for off-axis projection
         if (Input.GetKey(KeyCode.R)) {
             hOblique = vOblique = 0f;
+			obChanged = true;
         }
-        if (!enableObliqueControls) return;
-        if (Input.GetKey(KeyCode.DownArrow)) {
-            vOblique -= 0.01f;
-            obChanged = true;
-        }
-        if (Input.GetKey(KeyCode.UpArrow)) {
-            vOblique += 0.01f;
-            obChanged = true;
-        }
-        if (Input.GetKey(KeyCode.LeftArrow)) {
-            hOblique += 0.01f;
-            obChanged = true;
-        }
-        if (Input.GetKey(KeyCode.RightArrow)) {
-            hOblique -= 0.01f;
-            obChanged = true;
-        }
+		if (enableObliqueControls) {
+			if (Input.GetKey (KeyCode.DownArrow)) {
+				vOblique -= 0.01f;
+				obChanged = true;
+			}
+			if (Input.GetKey (KeyCode.UpArrow)) {
+				vOblique += 0.01f;
+				obChanged = true;
+			}
+			if (Input.GetKey (KeyCode.LeftArrow)) {
+				hOblique += 0.01f;
+				obChanged = true;
+			}
+			if (Input.GetKey (KeyCode.RightArrow)) {
+				hOblique -= 0.01f;
+				obChanged = true;
+			}
+		}
                     
         if (obChanged) {
             foreach (Camera cam in cameras) {
