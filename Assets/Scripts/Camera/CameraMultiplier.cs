@@ -9,12 +9,15 @@ public class CameraMultiplier : MonoBehaviour {
     
     public float rotationOffset = 210.0f; // 3.5 x fov of a camera (ie 3 x 60 + 30)
     public float viewportOffsetH = 0.0f; 
-    public float viewportOffsetV = 0.3f;
+    public float viewportOffsetV = 0.0f;
     
-    public float viewportHeight = 0.5f;
+    public float viewportHeight = 1f;
+
+    // data arena dimensions
+    public float screenHeight = 4.0f;
+    public float screenRadius = 4.9f;
     
-    public float hOblique = 1.0f;
-    public float vOblique = -1.0f;
+    public float viewerHeight = 1.2f;
     
     private Camera myCamera;
     private Camera[] cameras;
@@ -25,56 +28,48 @@ public class CameraMultiplier : MonoBehaviour {
     
     public bool enableBaseCamera = false;
     public bool enableObliqueControls = false;
-    
-    static Matrix4x4 PerspectiveOffCenter(float left, float right, float bottom, float top, float near, float far) {
-        float x = 2.0F * near / (right - left);
-        float y = 2.0F * near / (top - bottom);
-        float a = (right + left) / (right - left);
-        float b = (top + bottom) / (top - bottom);
-        float c = -(far + near) / (far - near);
-        float d = -(2.0F * far * near) / (far - near);
-        float e = -1.0F;
-        Matrix4x4 m = new Matrix4x4();
-        m[0, 0] = x;
-        m[0, 1] = 0;
-        m[0, 2] = a;
-        m[0, 3] = 0;
-        m[1, 0] = 0;
-        m[1, 1] = y;
-        m[1, 2] = b;
-        m[1, 3] = 0;
-        m[2, 0] = 0;
-        m[2, 1] = 0;
-        m[2, 2] = c;
-        m[2, 3] = d;
-        m[3, 0] = 0;
-        m[3, 1] = 0;
-        m[3, 2] = e;
-        m[3, 3] = 0;
-        return m;
-    }
+
+    public GameObject basePlane;
+
+    public GameObject[] planes;
     
     void Awake() {
         myCamera = (baseCamera != null) ? baseCamera : GetComponent<Camera>();
     }
     
-    // return the fov for the other dimension given an aspect ratio
-    private float hFovGiven(float vFov, float aspect) {
-        return Mathf.Rad2Deg * 2f * Mathf.Atan(Mathf.Tan(Mathf.Deg2Rad * vFov /2f) * aspect);    
-    }
-    
-    // Use this for initialization
-    void Start () {
+    void makeScreens() {
         
         cameras = new Camera[cameraCount];
+        planes = new GameObject[cameraCount];
+        
+        // create cameras
         for (int i = 0; i < cameras.Length; i++) {
+        
+            // make plane
+            GameObject plane = Object.Instantiate (basePlane, transform);
+            plane.SetActive(true);
+            plane.name = "Plane"+ i.ToString("D3");
+            plane.transform.parent = transform;
+            plane.transform.Rotate(0, 0, rotationOffset + (i * (360 / cameras.Length)));
+            
+            // figure out screen dimensions based on camera number and screen dimensions
+            float screenWidth = 2f * Mathf.Sin(Mathf.PI * 1f/cameraCount) * screenRadius;
+            float screenDist = Mathf.Cos(Mathf.PI * 1f/cameraCount) * screenRadius; 
+            // edges of camera frustum on screen
+            plane.transform.Translate(-Vector3.up * screenDist);
+            plane.transform.Translate(Vector3.forward * viewerHeight);
+            // plane is 10x0x10, scale based on screenHeight
+            plane.transform.localScale = new Vector3(.1f * screenWidth,0f, 0.1f * screenHeight);
+            planes[i] = plane;
+            
+            //camera pos and orientation
             GameObject go = new GameObject("Camera"+ i.ToString("D3"));
             go.AddComponent(typeof(Camera));
             go.transform.parent = transform;
             go.transform.localPosition = Vector3.zero;
             go.transform.localRotation = Quaternion.identity;
-            // orient camera
             go.transform.Rotate(0, rotationOffset + (i * (360 / cameras.Length)), 0);
+            
             cameras[i] = go.GetComponent<Camera>();
             // set pretty background colours
             cameras[i].backgroundColor = new Color (
@@ -83,6 +78,8 @@ public class CameraMultiplier : MonoBehaviour {
                 myCamera.backgroundColor.b + .1f * Mathf.Sin(2f * Mathf.PI * (i + (2 * cameraCount / 3f)) / (float) cameraCount)
             );
             cameras[i].depth = -cameraCount + myCamera.depth + i;
+            
+            
             // set camera rect on screen
             cameras[i].rect = new Rect(
                 (2f * (viewportOffsetH + (((float) i) / cameras.Length)) % 2) / 2f,
@@ -90,61 +87,59 @@ public class CameraMultiplier : MonoBehaviour {
                 (float) (1f / cameras.Length),
                 viewportHeight
                 );
-            
-            cameras[i].aspect = (1f / cameras.Length) / viewportHeight;
-            
-            // given that unity scales hfov based on aspect ratio, 
-            // find the required vfov given the aspect ratio of the cameras and expected hfov
-            cameras[i].fieldOfView = hFovGiven(360f / ((float) cameras.Length), 1f / cameras[i].aspect);
-            
-            
-            cameras[i].farClipPlane = farClip;
-            Matrix4x4 m = cameras[i].projectionMatrix;
-            m[0, 2] = hOblique;
-            m[1, 2] = vOblique;
-            cameras[i].projectionMatrix = m;
+
+            // off-axis projection settings
+            cameras[i].gameObject.AddComponent(typeof(Kooima));
+            Kooima kooima = cameras [i].GetComponent<Kooima> ();
+            if (kooima) { 
+                kooima.projectionScreen = planes[i];
+                kooima.estimateViewFrustum = false;
+                kooima.setNearClipPlane = true;
+                kooima.nearClipDistanceOffset = -0.01f;
+            }// */
         }
         
+    }
+    
+    // Use this for initialization
+    void Start () {
+        makeScreens();
         GetComponent<Camera>().enabled = enableBaseCamera;
     }
     
-    // Update is called once per frame
-    void LateUpdate () {
-
-        // reset obliqueness
-        // changing the obliqueness moves the camera's 'center', allowing for off-axis projection
-        if (Input.GetKey(KeyCode.R)) {
-            hOblique = vOblique = 0f;
-			obChanged = true;
+    // minimum 3
+    void setCameraCount(int count) {
+        if (count == cameraCount) {
+            return;
         }
-		if (enableObliqueControls) {
-			if (Input.GetKey (KeyCode.DownArrow)) {
-				vOblique -= 0.01f;
-				obChanged = true;
-			}
-			if (Input.GetKey (KeyCode.UpArrow)) {
-				vOblique += 0.01f;
-				obChanged = true;
-			}
-			if (Input.GetKey (KeyCode.LeftArrow)) {
-				hOblique += 0.01f;
-				obChanged = true;
-			}
-			if (Input.GetKey (KeyCode.RightArrow)) {
-				hOblique -= 0.01f;
-				obChanged = true;
-			}
-		}
-                    
-        if (obChanged) {
-            foreach (Camera cam in cameras) {
-                Matrix4x4 m = cam.projectionMatrix;
-                m[0, 2] = hOblique;
-                m[1, 2] = vOblique;
-                cam.projectionMatrix = m;
-            }
-            
-            obChanged = false;
+        
+        // destroy old cameras and screens
+        for (int i = 0; i < cameras.Length; i++) {
+            Destroy (cameras[i].gameObject);
+            Destroy (planes[i]);
         }
+        
+        if (count < 6) {
+            count = 6;
+        }
+        
+        cameraCount = count;
+        makeScreens();
     }
+    
+    // Update is called once per frame
+
+    void Update () {
+        // less cameras per screen
+        if (Input.GetKey (KeyCode.Minus) || Input.GetKey (KeyCode.KeypadMinus)) {
+            setCameraCount(cameraCount - 6);
+        }
+        
+        // more cameras per screen
+        if (Input.GetKey (KeyCode.Equals) || Input.GetKey (KeyCode.KeypadPlus)) {
+            setCameraCount(cameraCount + 6);
+        }
+        
+    }
+
 }
