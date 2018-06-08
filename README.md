@@ -21,7 +21,9 @@ Check out the example scenes for usage.
 
  * Plus key - Increase camera count by 6
  * Minus key - Decrease camera count by 6. Minimum 6
-  
+ * PageUp key - Increase viewerHeight by 0.1m
+ * PageDown key - Decrease viewerHeight by 0.1m
+ 
 ## Examples
 
 [TODO]

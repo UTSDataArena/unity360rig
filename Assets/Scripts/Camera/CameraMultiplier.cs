@@ -140,6 +140,20 @@ public class CameraMultiplier : MonoBehaviour {
             setCameraCount(cameraCount + 6);
         }
         
+        if (Input.GetKey (KeyCode.PageUp)) {
+            viewerHeight += 0.1f;
+            foreach (GameObject plane in planes) {
+                plane.transform.Translate(Vector3.forward * 0.1f);
+            }
+        }
+        
+        if (Input.GetKey (KeyCode.PageDown)) {
+            viewerHeight -= 0.1f;
+            foreach (GameObject plane in planes) {
+                plane.transform.Translate(Vector3.forward * -0.1f);
+            }
+        }
+        
     }
 
 }
