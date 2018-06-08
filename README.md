@@ -10,13 +10,21 @@ Check out the example scenes for usage.
  * `rotationOffset` - The offset (in degrees) relative to the local transform by which the first camera is placed. Use this to adjust which camera is 'front'.
  * `viewportOffsetH` - the horizontal offset (in homogenous coords) of the created camera viewports.
  * `viewportOffsetV` - the vertical offset (in homogenous coords) of the created camera viewports.
- * `hOblique` - the amount (in homogenous coords) by which to horizontally offset the camera's projection matrix. Useful for stereo.
- * `vOblique` - the amount (in homogenous coords) by which to vertically offset the camera's projection matrix. This is set to `0.67` in the arena to set the horizon to a comfortable level.
+ * `viewportHeight` - the screen height of the created camera viewports (in homogenous coords)
+ * `screenHeight` - the physical height of the data arena screen in metres (4.0m)
+ * `screenRadius` - the physical radius of the data arena screen in metres (4.9m)
+ * `viewerHeight` - the physical vertical of the virtual cameras in the data arena in metres. (1.2f);
  * `farClip` - the far clipping plane of each camera.
  * `enableBaseCamera` - also display the base camera in addition to panoramic camera.
- * `enableObliqueControls` - allow camera projection matrix to be changed during playback.
 
+## Keyboard controls
+
+ * Plus key - Increase camera count by 6
+ * Minus key - Decrease camera count by 6. Minimum 6
+  
 ## Examples
+
+[TODO]
 
 ### Mono Scene
 
